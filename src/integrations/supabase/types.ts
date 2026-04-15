@@ -14,16 +14,216 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      issue_history: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          id: string
+          issue_id: string
+          performed_by: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          issue_id: string
+          performed_by: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          issue_id?: string
+          performed_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issue_history_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      issues: {
+        Row: {
+          address: string | null
+          assigned_ngo: string | null
+          assigned_worker: string | null
+          category: Database["public"]["Enums"]["issue_category"]
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          latitude: number | null
+          longitude: number | null
+          ngo_verified: boolean | null
+          reported_by: string
+          status: Database["public"]["Enums"]["issue_status"]
+          title: string
+          updated_at: string
+          volunteer_verified: boolean | null
+        }
+        Insert: {
+          address?: string | null
+          assigned_ngo?: string | null
+          assigned_worker?: string | null
+          category?: Database["public"]["Enums"]["issue_category"]
+          created_at?: string
+          description: string
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          ngo_verified?: boolean | null
+          reported_by: string
+          status?: Database["public"]["Enums"]["issue_status"]
+          title: string
+          updated_at?: string
+          volunteer_verified?: boolean | null
+        }
+        Update: {
+          address?: string | null
+          assigned_ngo?: string | null
+          assigned_worker?: string | null
+          category?: Database["public"]["Enums"]["issue_category"]
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          ngo_verified?: boolean | null
+          reported_by?: string
+          status?: Database["public"]["Enums"]["issue_status"]
+          title?: string
+          updated_at?: string
+          volunteer_verified?: boolean | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          issue_id: string | null
+          message: string
+          read: boolean | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          issue_id?: string | null
+          message: string
+          read?: boolean | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          issue_id?: string | null
+          message?: string
+          read?: boolean | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "volunteer" | "ngo" | "worker"
+      issue_category:
+        | "drainage"
+        | "garbage"
+        | "electrical"
+        | "road"
+        | "water"
+        | "sanitation"
+        | "other"
+      issue_status:
+        | "reported"
+        | "accepted"
+        | "declined"
+        | "on_the_way"
+        | "work_in_progress"
+        | "completed"
+        | "verified"
+        | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +350,27 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["volunteer", "ngo", "worker"],
+      issue_category: [
+        "drainage",
+        "garbage",
+        "electrical",
+        "road",
+        "water",
+        "sanitation",
+        "other",
+      ],
+      issue_status: [
+        "reported",
+        "accepted",
+        "declined",
+        "on_the_way",
+        "work_in_progress",
+        "completed",
+        "verified",
+        "closed",
+      ],
+    },
   },
 } as const
