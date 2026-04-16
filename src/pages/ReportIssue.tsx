@@ -24,7 +24,7 @@ const categoryOptions: { value: IssueCategory; label: string }[] = [
 
 export default function ReportIssue() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -32,6 +32,16 @@ export default function ReportIssue() {
   const [address, setAddress] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Only volunteers can report issues
+  if (role !== "volunteer") {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <p className="text-muted-foreground mb-4">Only volunteers can report issues.</p>
+        <Button variant="outline" onClick={() => navigate(-1)}>Go Back</Button>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +62,6 @@ export default function ReportIssue() {
         imageUrl = urlData.publicUrl;
       }
 
-      // Try to get GPS
       let lat: number | null = null;
       let lng: number | null = null;
       try {
