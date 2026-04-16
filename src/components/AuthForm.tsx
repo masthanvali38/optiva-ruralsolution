@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 type AppRole = "volunteer" | "ngo" | "worker";
 
@@ -24,7 +25,7 @@ export default function AuthForm({ role, onBack }: Props) {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signOut } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,6 +37,24 @@ export default function AuthForm({ role, onBack }: Props) {
         toast({ title: "Account created!", description: "You can now use Urban Reporter." });
       } else {
         await signIn(email, password);
+        // Verify that the user's role matches the selected login role
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: roleData } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (roleData && roleData.role !== role) {
+            await signOut();
+            toast({
+              title: "Wrong login type",
+              description: `This account is registered as ${roleLabels[roleData.role as AppRole]}. Please use the ${roleLabels[roleData.role as AppRole]} login instead.`,
+              variant: "destructive",
+            });
+            return;
+          }
+        }
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
