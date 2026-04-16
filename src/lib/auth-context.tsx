@@ -63,7 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) throw error;
     if (data.user) {
-      await supabase.from("user_roles").insert({ user_id: data.user.id, role: selectedRole });
+      // Use security definer function to bypass RLS during signup
+      await supabase.rpc("assign_user_role", { _user_id: data.user.id, _role: selectedRole });
       setRole(selectedRole);
     }
   };
