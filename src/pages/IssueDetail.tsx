@@ -27,7 +27,16 @@ export default function IssueDetail() {
     setHistory(histData || []);
   };
 
-  useEffect(() => { fetchData(); }, [id]);
+  useEffect(() => {
+    fetchData();
+    if (!id) return;
+    const channel = supabase
+      .channel(`issue-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "issues", filter: `id=eq.${id}` }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "issue_history", filter: `issue_id=eq.${id}` }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
 
   const addHistory = async (action: string, details?: string) => {
     if (!user || !id) return;
