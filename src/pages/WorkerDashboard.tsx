@@ -6,14 +6,14 @@ import BottomNav from "@/components/BottomNav";
 import StatusTimeline from "@/components/StatusTimeline";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Navigation, Wrench, CheckCircle } from "lucide-react";
+import { MapPin, Navigation, Wrench, CheckCircle, LogOut } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Issue = Database["public"]["Tables"]["issues"]["Row"];
 
 export default function WorkerDashboard() {
   const [issues, setIssues] = useState<Issue[]>([]);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -78,9 +78,21 @@ export default function WorkerDashboard() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="gradient-hero text-primary-foreground p-6 pb-8 rounded-b-3xl">
-        <p className="text-xs font-medium uppercase tracking-wider opacity-70">Worker Panel</p>
-        <h1 className="text-2xl font-bold mt-1">Assigned Tasks</h1>
-        <p className="text-sm opacity-80 mt-1">{issues.length} active task{issues.length !== 1 ? "s" : ""}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider opacity-70">Worker Panel</p>
+            <h1 className="text-2xl font-bold mt-1">Assigned Tasks</h1>
+            <p className="text-sm opacity-80 mt-1">{issues.length} active task{issues.length !== 1 ? "s" : ""}</p>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={signOut}
+            className="text-primary-foreground hover:bg-primary-foreground/20 gap-1"
+          >
+            <LogOut className="w-4 h-4" /> Logout
+          </Button>
+        </div>
       </div>
 
       <div className="px-4 mt-4 space-y-3">

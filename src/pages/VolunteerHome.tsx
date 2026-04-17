@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FileText, AlertCircle, Users, Bell, Droplets, Trash2, Zap, Construction, MapPin } from "lucide-react";
+import { FileText, AlertCircle, Users, Bell, Droplets, Trash2, Zap, Construction, MapPin, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import BottomNav from "@/components/BottomNav";
+import { Button } from "@/components/ui/button";
 
 const quickActions = [
   { icon: FileText, label: "Report Issue", desc: "Submit a new complaint", path: "/report" },
@@ -21,9 +22,10 @@ const categories = [
 ];
 
 export default function VolunteerHome() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [fullName, setFullName] = useState<string>("");
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -34,8 +36,18 @@ export default function VolunteerHome() {
         setCategoryCounts(counts);
       }
     };
+    const fetchProfile = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setFullName(data?.full_name || user.email?.split("@")[0] || "Volunteer");
+    };
     fetchCounts();
-  }, []);
+    fetchProfile();
+  }, [user]);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
@@ -45,9 +57,21 @@ export default function VolunteerHome() {
     <div className="min-h-screen bg-background pb-20">
       {/* Hero */}
       <div className="gradient-hero text-primary-foreground p-6 pb-8 rounded-b-3xl">
-        <p className="text-sm opacity-80">{day}</p>
-        <h1 className="text-2xl font-bold mt-1">{greeting} 👋</h1>
-        <p className="text-sm opacity-80 mt-1">Report urban issues in your area</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm opacity-80">{day}</p>
+            <h1 className="text-2xl font-bold mt-1">{greeting}, {fullName} 👋</h1>
+            <p className="text-sm opacity-80 mt-1">Report urban issues in your area</p>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={signOut}
+            className="text-primary-foreground hover:bg-primary-foreground/20 gap-1"
+          >
+            <LogOut className="w-4 h-4" /> Logout
+          </Button>
+        </div>
         <div className="flex items-center gap-1 mt-3 text-xs opacity-70">
           <MapPin className="w-3 h-3" />
           <span>Auto-detecting location...</span>

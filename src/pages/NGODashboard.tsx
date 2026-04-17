@@ -6,7 +6,18 @@ import BottomNav from "@/components/BottomNav";
 import StatusTimeline from "@/components/StatusTimeline";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, MapPin, Clock, Eye } from "lucide-react";
+import { CheckCircle, XCircle, MapPin, Clock, Eye, Trash2, LogOut } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type Issue = Database["public"]["Tables"]["issues"]["Row"];
@@ -14,7 +25,7 @@ type Issue = Database["public"]["Tables"]["issues"]["Row"];
 export default function NGODashboard() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [tab, setTab] = useState<"pending" | "active" | "verify" | "closed">("pending");
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -59,6 +70,15 @@ export default function NGODashboard() {
     toast({ title: "Issue Closed" });
   };
 
+  const handleDelete = async (issue: Issue) => {
+    if (!user) return;
+    await supabase.from("issue_history").delete().eq("issue_id", issue.id);
+    const { error } = await supabase.from("issues").delete().eq("id", issue.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Issue Deleted", description: "The issue has been permanently removed." });
+    fetchIssues();
+  };
+
   const pending = issues.filter((i) => i.status === "reported");
   const active = issues.filter((i) => ["accepted", "on_the_way", "work_in_progress", "completed"].includes(i.status));
   const needsVerification = issues.filter((i) => i.status === "verified" && !i.ngo_verified);
@@ -82,6 +102,14 @@ export default function NGODashboard() {
             <p className="text-xs font-medium uppercase tracking-wider opacity-70">NGO Control Panel</p>
             <h1 className="text-2xl font-bold mt-1">Issue Management</h1>
           </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={signOut}
+            className="text-primary-foreground hover:bg-primary-foreground/20 gap-1"
+          >
+            <LogOut className="w-4 h-4" /> Logout
+          </Button>
         </div>
         <div className="flex gap-3 mt-4">
           {[
@@ -154,6 +182,29 @@ export default function NGODashboard() {
                 <CheckCircle className="w-4 h-4" /> Verify & Close Issue
               </Button>
             )}
+
+            {/* Delete - available on all tabs after review */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="w-full gap-1 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive">
+                  <Trash2 className="w-4 h-4" /> Delete Issue
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this issue?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes "{issue.title}" and all its history. Use this only for invalid or duplicate reports. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDelete(issue)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ))}
       </div>
