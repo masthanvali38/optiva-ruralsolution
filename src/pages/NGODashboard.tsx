@@ -102,6 +102,14 @@ export default function NGODashboard() {
             <p className="text-xs font-medium uppercase tracking-wider opacity-70">NGO Control Panel</p>
             <h1 className="text-2xl font-bold mt-1">Issue Management</h1>
           </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={signOut}
+            className="text-primary-foreground hover:bg-primary-foreground/20 gap-1"
+          >
+            <LogOut className="w-4 h-4" /> Logout
+          </Button>
         </div>
         <div className="flex gap-3 mt-4">
           {[
@@ -174,6 +182,29 @@ export default function NGODashboard() {
                 <CheckCircle className="w-4 h-4" /> Verify & Close Issue
               </Button>
             )}
+
+            {/* Delete - available on all tabs after review */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="w-full gap-1 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive">
+                  <Trash2 className="w-4 h-4" /> Delete Issue
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this issue?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes "{issue.title}" and all its history. Use this only for invalid or duplicate reports. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDelete(issue)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ))}
       </div>
