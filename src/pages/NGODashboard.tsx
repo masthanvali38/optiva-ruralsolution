@@ -6,7 +6,18 @@ import BottomNav from "@/components/BottomNav";
 import StatusTimeline from "@/components/StatusTimeline";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, MapPin, Clock, Eye } from "lucide-react";
+import { CheckCircle, XCircle, MapPin, Clock, Eye, Trash2, LogOut } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type Issue = Database["public"]["Tables"]["issues"]["Row"];
@@ -14,7 +25,7 @@ type Issue = Database["public"]["Tables"]["issues"]["Row"];
 export default function NGODashboard() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [tab, setTab] = useState<"pending" | "active" | "verify" | "closed">("pending");
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -57,6 +68,15 @@ export default function NGODashboard() {
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await supabase.from("issue_history").insert({ issue_id: issue.id, action: "closed", performed_by: user.id, details: "NGO verified and closed the issue" });
     toast({ title: "Issue Closed" });
+  };
+
+  const handleDelete = async (issue: Issue) => {
+    if (!user) return;
+    await supabase.from("issue_history").delete().eq("issue_id", issue.id);
+    const { error } = await supabase.from("issues").delete().eq("id", issue.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Issue Deleted", description: "The issue has been permanently removed." });
+    fetchIssues();
   };
 
   const pending = issues.filter((i) => i.status === "reported");
