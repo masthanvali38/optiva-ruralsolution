@@ -117,15 +117,26 @@ export default function WorkerDashboard() {
                 </div>
               )}
               {issue.latitude && issue.longitude && (
-                <a
-                  href={`https://maps.google.com/?q=${issue.latitude},${issue.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1 text-xs text-primary underline"
-                >
-                  <MapPin className="w-3 h-3" /> Open in Maps
-                </a>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${issue.latitude},${issue.longitude}&travelmode=driving`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 text-xs bg-primary text-primary-foreground px-2 py-1 rounded-md font-medium"
+                  >
+                    <Navigation className="w-3 h-3" /> Get Directions
+                  </a>
+                  <a
+                    href={`https://maps.google.com/?q=${issue.latitude},${issue.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 text-xs text-primary underline"
+                  >
+                    <MapPin className="w-3 h-3" /> View on Map
+                  </a>
+                </div>
               )}
               <StatusTimeline status={issue.status} />
             </button>
