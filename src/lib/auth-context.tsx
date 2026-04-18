@@ -22,48 +22,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = async (userId: string) => {
+  const applySession = async (nextSession: Session | null) => {
+    setSession(nextSession);
+    const nextUser = nextSession?.user ?? null;
+    setUser(nextUser);
+
+    if (!nextUser) {
+      setRole(null);
+      setLoading(false);
+      return;
+    }
+
     const { data } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
+      .eq("user_id", nextUser.id)
       .maybeSingle();
+
     setRole((data?.role as AppRole) ?? null);
+    setLoading(false);
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => fetchRole(session.user.id), 0);
-      } else {
-        setRole(null);
-      }
-      setLoading(false);
+    let mounted = true;
+
+    const syncAuth = async (nextSession: Session | null) => {
+      if (!mounted) return;
+      await applySession(nextSession);
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void syncAuth(nextSession);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchRole(session.user.id);
-      }
-      setLoading(false);
-    });
+    void supabase.auth.getSession().then(({ data: { session } }) => syncAuth(session));
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, selectedRole: AppRole) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: window.location.origin,
+      },
     });
+
     if (error) throw error;
+
     if (data.user) {
-      // Use security definer function to bypass RLS during signup
       await supabase.rpc("assign_user_role", { _user_id: data.user.id, _role: selectedRole });
       setRole(selectedRole);
     }
@@ -75,8 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setRole(null);
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } finally {
+      setSession(null);
+      setUser(null);
+      setRole(null);
+      setLoading(false);
+    }
   };
 
   return (

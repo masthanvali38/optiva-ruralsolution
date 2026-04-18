@@ -27,6 +27,11 @@ export default function VolunteerHome() {
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [fullName, setFullName] = useState<string>("");
 
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   useEffect(() => {
     const fetchCounts = async () => {
       const { data } = await supabase.from("issues").select("category");
@@ -66,7 +71,7 @@ export default function VolunteerHome() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={signOut}
+            onClick={handleLogout}
             className="text-primary-foreground hover:bg-primary-foreground/20 gap-1"
           >
             <LogOut className="w-4 h-4" /> Logout

@@ -1,4 +1,4 @@
-import { Home, AlertCircle, Heart, Building2, HardHat, Bell, LogOut } from "lucide-react";
+import { Home, AlertCircle, Building2, HardHat, Bell, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -14,14 +14,19 @@ export default function BottomNav() {
         { path: "/notifications", icon: Bell, label: "Alerts" },
       ]
     : role === "ngo"
-    ? [
-        { path: "/ngo", icon: Building2, label: "Dashboard" },
-        { path: "/notifications", icon: Bell, label: "Alerts" },
-      ]
-    : [
-        { path: "/worker", icon: HardHat, label: "Tasks" },
-        { path: "/notifications", icon: Bell, label: "Alerts" },
-      ];
+      ? [
+          { path: "/ngo", icon: Building2, label: "Dashboard" },
+          { path: "/notifications", icon: Bell, label: "Alerts" },
+        ]
+      : [
+          { path: "/worker", icon: HardHat, label: "Tasks" },
+          { path: "/notifications", icon: Bell, label: "Alerts" },
+        ];
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
@@ -42,7 +47,7 @@ export default function BottomNav() {
           );
         })}
         <button
-          onClick={signOut}
+          onClick={handleLogout}
           className="flex flex-col items-center gap-0.5 px-3 py-1 text-muted-foreground hover:text-destructive transition-colors"
         >
           <LogOut className="w-5 h-5" />
