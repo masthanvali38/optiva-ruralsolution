@@ -62,14 +62,18 @@ export default function WorkerDashboard() {
       assigned_worker: issue.assigned_worker ?? user.id,
     };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("issues")
       .update(update)
       .eq("id", issue.id)
-      .or(`assigned_worker.is.null,assigned_worker.eq.${user.id}`);
+      .select("id");
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (!data || data.length === 0) {
+      toast({ title: "Not allowed", description: "You don't have permission to update this task.", variant: "destructive" });
       return;
     }
 
