@@ -72,7 +72,15 @@ export default function IssueDetail() {
 
   const handleWorkerStatus = async (newStatus: "on_the_way" | "work_in_progress" | "completed") => {
     if (!issue || !user) return;
-    await supabase.from("issues").update({ status: newStatus }).eq("id", issue.id);
+    const { error } = await supabase
+      .from("issues")
+      .update({ status: newStatus, assigned_worker: issue.assigned_worker ?? user.id })
+      .eq("id", issue.id)
+      .or(`assigned_worker.is.null,assigned_worker.eq.${user.id}`);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
     await addHistory(newStatus, `Worker updated status to ${newStatus.replace(/_/g, " ")}`);
     toast({ title: `Status: ${newStatus.replace(/_/g, " ")}` });
     fetchData();

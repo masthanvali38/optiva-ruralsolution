@@ -7,7 +7,7 @@ import WorkerDashboard from "@/pages/WorkerDashboard";
 export default function Index() {
   const { user, role, loading } = useAuth();
 
-  if (loading) {
+  if (loading || (user && !role)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -16,8 +16,9 @@ export default function Index() {
   }
 
   if (!user) return <RoleSelect />;
-
   if (role === "ngo") return <NGODashboard />;
   if (role === "worker") return <WorkerDashboard />;
-  return <VolunteerHome />;
+  if (role === "volunteer") return <VolunteerHome />;
+
+  return <RoleSelect />;
 }

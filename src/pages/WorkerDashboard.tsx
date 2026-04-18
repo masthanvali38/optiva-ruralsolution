@@ -18,39 +18,76 @@ export default function WorkerDashboard() {
   const { toast } = useToast();
 
   const fetchIssues = async () => {
-    const { data } = await supabase
+    if (!user) {
+      setIssues([]);
+      return;
+    }
+
+    const { data, error } = await supabase
       .from("issues")
       .select("*")
+      .or(`assigned_worker.eq.${user.id},and(assigned_worker.is.null,status.eq.accepted)`)
       .in("status", ["accepted", "on_the_way", "work_in_progress"])
       .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+
     setIssues(data || []);
   };
 
   useEffect(() => {
-    fetchIssues();
+    if (!user) return;
+
+    void fetchIssues();
     const channel = supabase
-      .channel("worker-issues")
-      .on("postgres_changes", { event: "*", schema: "public", table: "issues" }, () => fetchIssues())
+      .channel(`worker-issues-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "issues" }, () => {
+        void fetchIssues();
+      })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const handleStatus = async (issue: Issue, newStatus: "on_the_way" | "work_in_progress" | "completed") => {
     if (!user) return;
-    const update: any = { status: newStatus };
-    if (newStatus === "on_the_way" && !issue.assigned_worker) {
-      update.assigned_worker = user.id;
+
+    const update: Database["public"]["Tables"]["issues"]["Update"] = {
+      status: newStatus,
+      assigned_worker: issue.assigned_worker ?? user.id,
+    };
+
+    const { error } = await supabase
+      .from("issues")
+      .update(update)
+      .eq("id", issue.id)
+      .or(`assigned_worker.is.null,assigned_worker.eq.${user.id}`);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
     }
-    const { error } = await supabase.from("issues").update(update).eq("id", issue.id);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+
     await supabase.from("issue_history").insert({
-      issue_id: issue.id, action: newStatus, performed_by: user.id,
+      issue_id: issue.id,
+      action: newStatus,
+      performed_by: user.id,
       details: `Worker updated status to ${newStatus.replace(/_/g, " ")}`,
     });
+
     toast({ title: `Status: ${newStatus.replace(/_/g, " ")}` });
+    void fetchIssues();
   };
 
   const getActionButton = (issue: Issue) => {
+    const isMine = !issue.assigned_worker || issue.assigned_worker === user?.id;
+    if (!isMine) return null;
+
     if (issue.status === "accepted") {
       return (
         <Button size="sm" onClick={() => handleStatus(issue, "on_the_way")} className="w-full gap-1">
@@ -78,7 +115,7 @@ export default function WorkerDashboard() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="gradient-hero text-primary-foreground p-6 pb-8 rounded-b-3xl">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider opacity-70">Worker Panel</p>
             <h1 className="text-2xl font-bold mt-1">Assigned Tasks</h1>

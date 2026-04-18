@@ -29,6 +29,11 @@ export default function NGODashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   const fetchIssues = async () => {
     const { data } = await supabase
       .from("issues")
@@ -105,7 +110,7 @@ export default function NGODashboard() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={signOut}
+            onClick={handleLogout}
             className="text-primary-foreground hover:bg-primary-foreground/20 gap-1"
           >
             <LogOut className="w-4 h-4" /> Logout
