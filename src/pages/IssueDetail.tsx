@@ -72,13 +72,17 @@ export default function IssueDetail() {
 
   const handleWorkerStatus = async (newStatus: "on_the_way" | "work_in_progress" | "completed") => {
     if (!issue || !user) return;
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("issues")
       .update({ status: newStatus, assigned_worker: issue.assigned_worker ?? user.id })
       .eq("id", issue.id)
-      .or(`assigned_worker.is.null,assigned_worker.eq.${user.id}`);
+      .select("id");
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (!data || data.length === 0) {
+      toast({ title: "Not allowed", description: "You don't have permission to update this task.", variant: "destructive" });
       return;
     }
     await addHistory(newStatus, `Worker updated status to ${newStatus.replace(/_/g, " ")}`);
