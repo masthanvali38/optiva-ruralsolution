@@ -34,7 +34,7 @@ export default function AuthForm({ role, onBack }: Props) {
     try {
       if (isSignUp) {
         await signUp(email, password, fullName, role);
-        toast({ title: "Account created!", description: "You can now use Urban Reporter." });
+        toast({ title: "Account created!", description: "You can now use Optiva." });
       } else {
         await signIn(email, password);
         // Verify that the user's role matches the selected login role
