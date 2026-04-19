@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Navigation } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -139,6 +139,25 @@ export default function IssueDetail() {
               <MapPin className="w-3 h-3" /> {issue.address}
             </div>
           )}
+          {(issue.latitude && issue.longitude) || issue.address ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-2"
+              onClick={() => {
+                const dest =
+                  issue.latitude && issue.longitude
+                    ? `${issue.latitude},${issue.longitude}`
+                    : encodeURIComponent(issue.address || "");
+                window.open(
+                  `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`,
+                  "_blank"
+                );
+              }}
+            >
+              <Navigation className="w-4 h-4 mr-2" /> Get Directions
+            </Button>
+          ) : null}
         </div>
 
         {/* NGO Actions */}
