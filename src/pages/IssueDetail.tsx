@@ -139,6 +139,18 @@ export default function IssueDetail() {
               <MapPin className="w-3 h-3" /> {issue.address}
             </div>
           )}
+          {issue.latitude && issue.longitude && (
+            <div className="rounded-lg overflow-hidden border border-border mt-2">
+              <iframe
+                title="Issue location"
+                width="100%"
+                height="180"
+                loading="lazy"
+                style={{ border: 0, display: "block" }}
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${issue.longitude - 0.005}%2C${issue.latitude - 0.003}%2C${issue.longitude + 0.005}%2C${issue.latitude + 0.003}&layer=mapnik&marker=${issue.latitude}%2C${issue.longitude}`}
+              />
+            </div>
+          )}
           {(issue.latitude && issue.longitude) || issue.address ? (
             <Button
               variant="outline"
