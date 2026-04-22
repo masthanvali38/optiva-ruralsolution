@@ -159,15 +159,27 @@ export default function WorkerDashboard() {
               )}
               {issue.latitude && issue.longitude && (
                 <div className="flex flex-wrap gap-2">
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${issue.latitude},${issue.longitude}&travelmode=driving`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const dest = `${issue.latitude},${issue.longitude}`;
+                      const open = (origin?: string) => {
+                        const o = origin ? `&origin=${origin}` : "";
+                        window.open(`https://www.google.com/maps/dir/?api=1${o}&destination=${dest}&travelmode=driving`, "_blank");
+                      };
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => open(`${pos.coords.latitude},${pos.coords.longitude}`),
+                          () => open(),
+                          { enableHighAccuracy: true, timeout: 8000 }
+                        );
+                      } else open();
+                    }}
                     className="inline-flex items-center gap-1 text-xs bg-primary text-primary-foreground px-2 py-1 rounded-md font-medium"
                   >
                     <Navigation className="w-3 h-3" /> Get Directions
-                  </a>
+                  </button>
                   <a
                     href={`https://maps.google.com/?q=${issue.latitude},${issue.longitude}`}
                     target="_blank"
