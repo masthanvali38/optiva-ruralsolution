@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, MapPin } from "lucide-react";
+import { ArrowLeft, Camera, MapPin, LocateFixed, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,8 +30,43 @@ export default function ReportIssue() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<IssueCategory>("other");
   const [address, setAddress] = useState("");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const detectLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({ title: "Not supported", description: "Geolocation is not available.", variant: "destructive" });
+      return;
+    }
+    setLocating(true);
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+      );
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      setCoords({ lat, lng });
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+          { headers: { Accept: "application/json" } }
+        );
+        const json = await res.json();
+        const display = json?.display_name as string | undefined;
+        setAddress(display || `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        toast({ title: "Location detected" });
+      } catch {
+        setAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        toast({ title: "Coordinates captured" });
+      }
+    } catch (err: any) {
+      toast({ title: "Location error", description: err.message || "Permission denied", variant: "destructive" });
+    } finally {
+      setLocating(false);
+    }
+  };
 
   // Only volunteers can report issues
   if (role !== "volunteer") {
@@ -62,15 +97,17 @@ export default function ReportIssue() {
         imageUrl = urlData.publicUrl;
       }
 
-      let lat: number | null = null;
-      let lng: number | null = null;
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
-        );
-        lat = pos.coords.latitude;
-        lng = pos.coords.longitude;
-      } catch {}
+      let lat: number | null = coords?.lat ?? null;
+      let lng: number | null = coords?.lng ?? null;
+      if (lat === null || lng === null) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+          );
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+        } catch {}
+      }
 
       const { error } = await supabase.from("issues").insert({
         reported_by: user.id,
@@ -116,9 +153,18 @@ export default function ReportIssue() {
 
         <Textarea placeholder="Describe the issue in detail..." value={description} onChange={(e) => setDescription(e.target.value)} required rows={4} />
 
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Address / Location" value={address} onChange={(e) => setAddress(e.target.value)} />
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Address / Location" value={address} onChange={(e) => { setAddress(e.target.value); setCoords(null); }} />
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={detectLocation} disabled={locating} className="w-full">
+            {locating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <LocateFixed className="w-4 h-4 mr-2" />}
+            {locating ? "Detecting..." : "Use my current location"}
+          </Button>
+          {coords && (
+            <p className="text-[10px] text-muted-foreground">📍 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}</p>
+          )}
         </div>
 
         <label className="flex items-center gap-3 p-4 bg-card rounded-xl border border-dashed border-border cursor-pointer hover:border-primary transition-colors">
