@@ -156,6 +156,9 @@ export default function IssueDetail() {
         <div>
           <h1 className="text-xl font-bold text-foreground">{issue.title}</h1>
           <p className="text-xs text-muted-foreground capitalize mt-1">{issue.category} issue</p>
+          {reporterName && (
+            <p className="text-xs text-muted-foreground mt-1">Reported by <span className="font-medium text-foreground">{reporterName}</span></p>
+          )}
         </div>
 
         <StatusTimeline status={issue.status} />
