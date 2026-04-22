@@ -17,6 +17,12 @@ export default function WorkerDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const openInNewTab = (url: string) => {
+    const win = window.open("about:blank", "_blank");
+    if (win) win.location.href = url;
+    else window.location.href = url;
+  };
+
   const fetchIssues = async () => {
     if (!user) {
       setIssues([]);
@@ -88,6 +94,50 @@ export default function WorkerDashboard() {
     void fetchIssues();
   };
 
+  const handleDirections = (issue: Issue) => {
+    const destination = issue.latitude && issue.longitude
+      ? `${issue.latitude},${issue.longitude}`
+      : encodeURIComponent(issue.address || "");
+
+    if (!destination) {
+      toast({ title: "No location found", description: "This issue does not have a location yet.", variant: "destructive" });
+      return;
+    }
+
+    const openGoogleDirections = (origin?: string) => {
+      const originParam = origin ? `&origin=${origin}` : "";
+      openInNewTab(`https://www.google.com/maps/dir/?api=1${originParam}&destination=${destination}&travelmode=driving`);
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => openGoogleDirections(`${pos.coords.latitude},${pos.coords.longitude}`),
+        () => {
+          toast({ title: "Location blocked", description: "Opening route without your current location." });
+          openGoogleDirections();
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+      return;
+    }
+
+    openGoogleDirections();
+  };
+
+  const handleOpenMap = (issue: Issue) => {
+    if (issue.latitude && issue.longitude) {
+      openInNewTab(`https://www.openstreetmap.org/?mlat=${issue.latitude}&mlon=${issue.longitude}#map=18/${issue.latitude}/${issue.longitude}`);
+      return;
+    }
+
+    if (issue.address) {
+      openInNewTab(`https://www.openstreetmap.org/search?query=${encodeURIComponent(issue.address)}`);
+      return;
+    }
+
+    toast({ title: "No location found", description: "This issue does not have a location yet.", variant: "destructive" });
+  };
+
   const getActionButton = (issue: Issue) => {
     const isMine = !issue.assigned_worker || issue.assigned_worker === user?.id;
     if (!isMine) return null;
@@ -139,10 +189,7 @@ export default function WorkerDashboard() {
       <div className="px-4 mt-4 space-y-3">
         {issues.map((issue) => (
           <div key={issue.id} className="bg-card rounded-xl p-4 shadow-card space-y-3">
-            <button
-              onClick={() => navigate(`/issue/${issue.id}`)}
-              className="w-full text-left space-y-2"
-            >
+            <button onClick={() => navigate(`/issue/${issue.id}`)} className="w-full text-left space-y-2">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold text-sm text-card-foreground">{issue.title}</p>
@@ -157,42 +204,19 @@ export default function WorkerDashboard() {
                   <MapPin className="w-3 h-3" /> {issue.address}
                 </div>
               )}
-              {issue.latitude && issue.longitude && (
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const dest = `${issue.latitude},${issue.longitude}`;
-                      const open = (origin?: string) => {
-                        const o = origin ? `&origin=${origin}` : "";
-                        window.open(`https://www.google.com/maps/dir/?api=1${o}&destination=${dest}&travelmode=driving`, "_blank");
-                      };
-                      if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                          (pos) => open(`${pos.coords.latitude},${pos.coords.longitude}`),
-                          () => open(),
-                          { enableHighAccuracy: true, timeout: 8000 }
-                        );
-                      } else open();
-                    }}
-                    className="inline-flex items-center gap-1 text-xs bg-primary text-primary-foreground px-2 py-1 rounded-md font-medium"
-                  >
-                    <Navigation className="w-3 h-3" /> Get Directions
-                  </button>
-                  <a
-                    href={`https://maps.google.com/?q=${issue.latitude},${issue.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 text-xs text-primary underline"
-                  >
-                    <MapPin className="w-3 h-3" /> View on Map
-                  </a>
-                </div>
-              )}
               <StatusTimeline status={issue.status} />
             </button>
+
+            {(issue.latitude && issue.longitude) || issue.address ? (
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" className="gap-1" onClick={() => handleDirections(issue)}>
+                  <Navigation className="w-4 h-4" /> Get Directions
+                </Button>
+                <Button type="button" size="sm" variant="outline" className="gap-1" onClick={() => handleOpenMap(issue)}>
+                  <MapPin className="w-4 h-4" /> Open Map
+                </Button>
+              </div>
+            ) : null}
 
             {getActionButton(issue)}
           </div>
