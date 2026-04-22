@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, MapPin } from "lucide-react";
+import { ArrowLeft, Camera, MapPin, LocateFixed, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,8 +30,43 @@ export default function ReportIssue() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<IssueCategory>("other");
   const [address, setAddress] = useState("");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const detectLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({ title: "Not supported", description: "Geolocation is not available.", variant: "destructive" });
+      return;
+    }
+    setLocating(true);
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+      );
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      setCoords({ lat, lng });
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+          { headers: { Accept: "application/json" } }
+        );
+        const json = await res.json();
+        const display = json?.display_name as string | undefined;
+        setAddress(display || `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        toast({ title: "Location detected" });
+      } catch {
+        setAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        toast({ title: "Coordinates captured" });
+      }
+    } catch (err: any) {
+      toast({ title: "Location error", description: err.message || "Permission denied", variant: "destructive" });
+    } finally {
+      setLocating(false);
+    }
+  };
 
   // Only volunteers can report issues
   if (role !== "volunteer") {
