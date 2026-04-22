@@ -192,10 +192,26 @@ export default function IssueDetail() {
                   issue.latitude && issue.longitude
                     ? `${issue.latitude},${issue.longitude}`
                     : encodeURIComponent(issue.address || "");
-                window.open(
-                  `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`,
-                  "_blank"
-                );
+                const openWith = (origin?: string) => {
+                  const originParam = origin ? `&origin=${origin}` : "";
+                  window.open(
+                    `https://www.google.com/maps/dir/?api=1${originParam}&destination=${dest}&travelmode=driving`,
+                    "_blank"
+                  );
+                };
+                if (navigator.geolocation) {
+                  toast({ title: "Getting your location..." });
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => openWith(`${pos.coords.latitude},${pos.coords.longitude}`),
+                    () => {
+                      toast({ title: "Using destination only", description: "Allow location access for turn-by-turn from here." });
+                      openWith();
+                    },
+                    { enableHighAccuracy: true, timeout: 8000 }
+                  );
+                } else {
+                  openWith();
+                }
               }}
             >
               <Navigation className="w-4 h-4 mr-2" /> Get Directions
