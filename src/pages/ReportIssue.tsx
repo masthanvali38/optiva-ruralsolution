@@ -97,15 +97,17 @@ export default function ReportIssue() {
         imageUrl = urlData.publicUrl;
       }
 
-      let lat: number | null = null;
-      let lng: number | null = null;
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
-        );
-        lat = pos.coords.latitude;
-        lng = pos.coords.longitude;
-      } catch {}
+      let lat: number | null = coords?.lat ?? null;
+      let lng: number | null = coords?.lng ?? null;
+      if (lat === null || lng === null) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+          );
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+        } catch {}
+      }
 
       const { error } = await supabase.from("issues").insert({
         reported_by: user.id,
@@ -151,9 +153,18 @@ export default function ReportIssue() {
 
         <Textarea placeholder="Describe the issue in detail..." value={description} onChange={(e) => setDescription(e.target.value)} required rows={4} />
 
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Address / Location" value={address} onChange={(e) => setAddress(e.target.value)} />
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Address / Location" value={address} onChange={(e) => { setAddress(e.target.value); setCoords(null); }} />
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={detectLocation} disabled={locating} className="w-full">
+            {locating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <LocateFixed className="w-4 h-4 mr-2" />}
+            {locating ? "Detecting..." : "Use my current location"}
+          </Button>
+          {coords && (
+            <p className="text-[10px] text-muted-foreground">📍 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}</p>
+          )}
         </div>
 
         <label className="flex items-center gap-3 p-4 bg-card rounded-xl border border-dashed border-border cursor-pointer hover:border-primary transition-colors">
