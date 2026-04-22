@@ -95,33 +95,38 @@ export default function WorkerDashboard() {
   };
 
   const handleDirections = (issue: Issue) => {
-    const destination = issue.latitude && issue.longitude
-      ? `${issue.latitude},${issue.longitude}`
-      : encodeURIComponent(issue.address || "");
+    if (!issue.latitude || !issue.longitude) {
+      if (issue.address) {
+        openInNewTab(`https://www.openstreetmap.org/search?query=${encodeURIComponent(issue.address)}`);
+        return;
+      }
 
-    if (!destination) {
       toast({ title: "No location found", description: "This issue does not have a location yet.", variant: "destructive" });
       return;
     }
 
-    const openGoogleDirections = (origin?: string) => {
-      const originParam = origin ? `&origin=${origin}` : "";
-      openInNewTab(`https://www.google.com/maps/dir/?api=1${originParam}&destination=${destination}&travelmode=driving`);
+    const destination = `${issue.latitude},${issue.longitude}`;
+
+    const openRoute = (origin?: string) => {
+      const url = origin
+        ? `https://www.openstreetmap.org/directions?from=${origin}&to=${destination}&engine=fossgis_osrm_car`
+        : `https://www.openstreetmap.org/directions?to=${destination}&engine=fossgis_osrm_car`;
+      openInNewTab(url);
     };
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => openGoogleDirections(`${pos.coords.latitude},${pos.coords.longitude}`),
+        (pos) => openRoute(`${pos.coords.latitude},${pos.coords.longitude}`),
         () => {
           toast({ title: "Location blocked", description: "Opening route without your current location." });
-          openGoogleDirections();
+          openRoute();
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
       return;
     }
 
-    openGoogleDirections();
+    openRoute();
   };
 
   const handleOpenMap = (issue: Issue) => {
