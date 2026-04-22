@@ -18,6 +18,7 @@ export default function IssueDetail() {
   const navigate = useNavigate();
   const [issue, setIssue] = useState<Issue | null>(null);
   const [history, setHistory] = useState<History[]>([]);
+  const [reporterName, setReporterName] = useState<string>("");
 
   const fetchData = async () => {
     if (!id) return;
@@ -25,6 +26,25 @@ export default function IssueDetail() {
     setIssue(issueData);
     const { data: histData } = await supabase.from("issue_history").select("*").eq("issue_id", id).order("created_at", { ascending: true });
     setHistory(histData || []);
+    if (issueData?.reported_by) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", issueData.reported_by)
+        .maybeSingle();
+      setReporterName(prof?.full_name || "Volunteer");
+    }
+  };
+
+  const notifyUser = async (userId: string, title: string, message: string) => {
+    if (!id) return;
+    try {
+      await supabase.functions.invoke("notify-user", {
+        body: { user_id: userId, title, message, issue_id: id },
+      });
+    } catch (e) {
+      console.error("notify-user failed", e);
+    }
   };
 
   useEffect(() => {
