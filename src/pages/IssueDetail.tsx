@@ -68,16 +68,11 @@ export default function IssueDetail() {
     });
   };
 
-  const notify = async (userId: string, title: string, message: string) => {
-    if (!id) return;
-    // We'll insert as the target user via RLS - but our policy requires auth.uid() = user_id
-    // So notifications will be created by edge function in production. For now, skip self-notification.
-  };
-
   const handleNGOAccept = async () => {
     if (!issue || !user) return;
     await supabase.from("issues").update({ status: "accepted", assigned_ngo: user.id }).eq("id", issue.id);
     await addHistory("accepted", "NGO accepted the issue");
+    await notifyUser(issue.reported_by, "Issue Accepted", `Your report "${issue.title}" was accepted by an NGO.`);
     toast({ title: "Issue Accepted" });
     fetchData();
   };
@@ -86,6 +81,7 @@ export default function IssueDetail() {
     if (!issue || !user) return;
     await supabase.from("issues").update({ status: "declined" }).eq("id", issue.id);
     await addHistory("declined", "NGO declined the issue");
+    await notifyUser(issue.reported_by, "Issue Declined", `Your report "${issue.title}" was declined.`);
     toast({ title: "Issue Declined" });
     fetchData();
   };
@@ -106,6 +102,14 @@ export default function IssueDetail() {
       return;
     }
     await addHistory(newStatus, `Worker updated status to ${newStatus.replace(/_/g, " ")}`);
+
+    const labels = {
+      on_the_way: { title: "Worker on the way", message: `A worker is heading to "${issue.title}".` },
+      work_in_progress: { title: "Work started", message: `Work has started on "${issue.title}".` },
+      completed: { title: "Work completed — please verify", message: `The worker marked "${issue.title}" as completed. Please verify.` },
+    } as const;
+    await notifyUser(issue.reported_by, labels[newStatus].title, labels[newStatus].message);
+
     toast({ title: `Status: ${newStatus.replace(/_/g, " ")}` });
     fetchData();
   };
@@ -115,10 +119,13 @@ export default function IssueDetail() {
     if (satisfied) {
       await supabase.from("issues").update({ volunteer_verified: true, status: "verified" }).eq("id", issue.id);
       await addHistory("verified", "Volunteer confirmed work completed");
+      if (issue.assigned_worker) await notifyUser(issue.assigned_worker, "Work verified", `Volunteer verified your work on "${issue.title}". Thank you!`);
+      if (issue.assigned_ngo) await notifyUser(issue.assigned_ngo, "Awaiting NGO close", `Volunteer verified "${issue.title}". Ready for NGO closure.`);
       toast({ title: "Verified! Thank you." });
     } else {
       await supabase.from("issues").update({ volunteer_verified: false, status: "accepted" }).eq("id", issue.id);
       await addHistory("reopened", "Volunteer not satisfied, issue reopened");
+      if (issue.assigned_worker) await notifyUser(issue.assigned_worker, "Issue reopened", `Volunteer was not satisfied with "${issue.title}". Please revisit.`);
       toast({ title: "Issue reopened", variant: "destructive" });
     }
     fetchData();
@@ -128,6 +135,7 @@ export default function IssueDetail() {
     if (!issue || !user) return;
     await supabase.from("issues").update({ ngo_verified: true, status: "closed" }).eq("id", issue.id);
     await addHistory("closed", "NGO verified and closed the issue");
+    await notifyUser(issue.reported_by, "Issue closed", `Your report "${issue.title}" has been closed.`);
     toast({ title: "Issue Closed" });
     fetchData();
   };
