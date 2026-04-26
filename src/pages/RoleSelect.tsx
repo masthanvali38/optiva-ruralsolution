@@ -48,7 +48,7 @@ export default function RoleSelect() {
             <ClipboardList className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Optiva</h1>
-          <p className="text-muted-foreground text-sm">Smart Urban Problem Reporting</p>
+          <p className="text-muted-foreground text-sm">Smart Rural Problem Reporting</p>
         </div>
 
         <div className="space-y-2">
