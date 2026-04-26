@@ -66,7 +66,7 @@ export default function VolunteerHome() {
           <div>
             <p className="text-sm opacity-80">{day}</p>
             <h1 className="text-2xl font-bold mt-1">{greeting}, {fullName} 👋</h1>
-            <p className="text-sm opacity-80 mt-1">Report urban issues in your area</p>
+            <p className="text-sm opacity-80 mt-1">Report rural issues in your area</p>
           </div>
           <Button
             size="sm"
