@@ -5,6 +5,8 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Use sub-path for GitHub Pages build, root for dev/Lovable hosting
+  base: mode === "production" ? "/optiva-ruralsolution/" : "/",
   server: {
     host: "::",
     port: 8080,
