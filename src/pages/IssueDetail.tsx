@@ -218,31 +218,6 @@ export default function IssueDetail() {
               >
                 <Navigation className="w-4 h-4 mr-2" /> Get Directions (Google Maps)
               </Button>
-              {issue.latitude && issue.longitude && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    const dest = `${issue.latitude},${issue.longitude}`;
-                    const openOSM = (origin?: string) => {
-                      const url = origin
-                        ? `https://www.openstreetmap.org/directions?from=${origin}&to=${dest}&engine=fossgis_osrm_car`
-                        : `https://www.openstreetmap.org/directions?to=${dest}&engine=fossgis_osrm_car`;
-                      window.open(url, "_blank");
-                    };
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(
-                        (pos) => openOSM(`${pos.coords.latitude},${pos.coords.longitude}`),
-                        () => openOSM(),
-                        { enableHighAccuracy: true, timeout: 8000 }
-                      );
-                    } else openOSM();
-                  }}
-                >
-                  <MapPin className="w-4 h-4 mr-2" /> Open in OpenStreetMap (no API key)
-                </Button>
-              )}
             </div>
           ) : null}
         </div>
