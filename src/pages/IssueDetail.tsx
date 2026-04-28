@@ -154,7 +154,25 @@ export default function IssueDetail() {
         )}
 
         <div>
-          <h1 className="text-xl font-bold text-foreground">{issue.title}</h1>
+          <div className="flex items-start justify-between gap-2">
+            <h1 className="text-xl font-bold text-foreground">{issue.title}</h1>
+            {issue.urgency && (
+              <span
+                className={`text-[10px] px-2 py-1 rounded-full font-semibold capitalize flex-shrink-0 ${
+                  issue.urgency === "critical"
+                    ? "bg-destructive/20 text-destructive"
+                    : issue.urgency === "high"
+                    ? "bg-secondary/20 text-secondary"
+                    : issue.urgency === "medium"
+                    ? "bg-accent/20 text-accent"
+                    : "bg-muted text-muted-foreground"
+                }`}
+                title="AI-detected urgency"
+              >
+                {issue.urgency === "critical" ? "🔴" : issue.urgency === "high" ? "🟠" : issue.urgency === "medium" ? "🟡" : "🟢"} AI: {issue.urgency}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground capitalize mt-1">{issue.category} issue</p>
           {reporterName && (
             <p className="text-xs text-muted-foreground mt-1">Reported by <span className="font-medium text-foreground">{reporterName}</span></p>
