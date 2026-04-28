@@ -21,6 +21,19 @@ const statusColors: Record<string, string> = {
   closed: "bg-muted text-muted-foreground",
 };
 
+const urgencyStyles: Record<string, string> = {
+  low: "bg-muted text-muted-foreground",
+  medium: "bg-accent/20 text-accent",
+  high: "bg-secondary/20 text-secondary",
+  critical: "bg-destructive/20 text-destructive",
+};
+const urgencyIcon: Record<string, string> = {
+  low: "🟢",
+  medium: "🟡",
+  high: "🟠",
+  critical: "🔴",
+};
+
 export default function IssuesList() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const { user, role } = useAuth();
@@ -68,14 +81,21 @@ export default function IssuesList() {
             onClick={() => navigate(`/issue/${issue.id}`)}
             className="w-full bg-card rounded-xl p-4 shadow-card text-left space-y-2 hover:shadow-card-hover transition-shadow"
           >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-semibold text-sm text-card-foreground">{issue.title}</p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-sm text-card-foreground truncate">{issue.title}</p>
                 <p className="text-xs text-muted-foreground capitalize">{issue.category}</p>
               </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${statusColors[issue.status] || ""}`}>
-                {issue.status.replace(/_/g, " ")}
-              </span>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${statusColors[issue.status] || ""}`}>
+                  {issue.status.replace(/_/g, " ")}
+                </span>
+                {issue.urgency && (
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${urgencyStyles[issue.urgency] || ""}`}>
+                    {urgencyIcon[issue.urgency]} {issue.urgency}
+                  </span>
+                )}
+              </div>
             </div>
             {issue.address && (
               <p className="text-xs text-muted-foreground truncate">{issue.address}</p>

@@ -109,7 +109,7 @@ export default function ReportIssue() {
         } catch {}
       }
 
-      const { error } = await supabase.from("issues").insert({
+      const { data: inserted, error } = await supabase.from("issues").insert({
         reported_by: user.id,
         title,
         description,
@@ -118,11 +118,18 @@ export default function ReportIssue() {
         image_url: imageUrl,
         latitude: lat,
         longitude: lng,
-      });
+      }).select("id").single();
 
       if (error) throw error;
 
-      toast({ title: "Issue Reported!", description: "Your report has been submitted." });
+      // Fire-and-forget AI urgency detection
+      if (inserted?.id) {
+        supabase.functions.invoke("detect-urgency", {
+          body: { issue_id: inserted.id, title, description, category },
+        }).catch((e) => console.error("urgency detection failed", e));
+      }
+
+      toast({ title: "Issue Reported!", description: "AI is analyzing urgency. Your report has been submitted." });
       navigate("/issues");
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });

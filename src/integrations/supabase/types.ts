@@ -66,6 +66,7 @@ export type Database = {
           status: Database["public"]["Enums"]["issue_status"]
           title: string
           updated_at: string
+          urgency: Database["public"]["Enums"]["urgency_level"] | null
           volunteer_verified: boolean | null
         }
         Insert: {
@@ -84,6 +85,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["issue_status"]
           title: string
           updated_at?: string
+          urgency?: Database["public"]["Enums"]["urgency_level"] | null
           volunteer_verified?: boolean | null
         }
         Update: {
@@ -102,6 +104,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["issue_status"]
           title?: string
           updated_at?: string
+          urgency?: Database["public"]["Enums"]["urgency_level"] | null
           volunteer_verified?: boolean | null
         }
         Relationships: []
@@ -231,6 +234,7 @@ export type Database = {
         | "completed"
         | "verified"
         | "closed"
+      urgency_level: "low" | "medium" | "high" | "critical"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -378,6 +382,7 @@ export const Constants = {
         "verified",
         "closed",
       ],
+      urgency_level: ["low", "medium", "high", "critical"],
     },
   },
 } as const
