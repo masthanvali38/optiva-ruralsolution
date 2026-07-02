@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, role: selectedRole },
         emailRedirectTo: window.location.origin,
       },
     });
@@ -78,7 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
 
     if (data.user) {
-      await supabase.rpc("assign_user_role", { _user_id: data.user.id, _role: selectedRole });
       setRole(selectedRole);
     }
   };
